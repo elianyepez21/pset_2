@@ -1,0 +1,88 @@
+# Infraestructura local del PSet 2: Kestra (+ Postgres) y Spark. dbt corre como contenedor bajo demanda.
+# Uso: ver README.md. Las credenciales salen de .env y .env_encoded (ambos fuera de git).
+name: pset2
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: kestra
+      POSTGRES_USER: kestra
+      POSTGRES_PASSWORD: ${KESTRA_DB_PASSWORD}      # clave interna del metastore de Kestra (viene de .env)
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  kestra:
+    image: kestra/kestra:v0.20.11
+    user: "root"                          # necesario para usar el socket de Docker (task runner Docker)
+    command: server standalone --flow-path /app/flows
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env_encoded                      # secretos SECRET_* en base64 (se genera con scripts/encode_secrets.sh)
+    environment:
+      KESTRA_CONFIGURATION: |
+        datasources:
+          postgres:
+            url: jdbc:postgresql://postgres:5432/kestra
+            driverClassName: org.postgresql.Driver
+            username: kestra
+            password: ${KESTRA_DB_PASSWORD}
+        kestra:
+          server:
+            basic-auth:
+              username: ${KESTRA_USER}
+              password: ${KESTRA_PASSWORD}
+          repository:
+            type: postgres
+          storage:
+            type: local
+            local:
+              base-path: /app/storage
+          queue:
+            type: postgres
+          tasks:
+            tmp-dir:
+              path: /tmp/kestra-wd/tmp
+          url: http://localhost:8080/
+    ports:
+      - "8080:8080"
+    volumes:
+      - kestra-data:/app/storage
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/kestra-wd:/tmp/kestra-wd
+      - ./kestra/flows:/app/flows:ro      # los flujos se cargan solos al iniciar
+
+  spark:
+    build: ./spark
+    image: pset2-spark:latest
+    profiles: ["jobs"]                    # no arranca con "up"; se ejecuta con: docker compose run --rm spark
+    env_file:
+      - .env
+    environment:
+      SPARK_MASTER: local[*]
+    volumes:
+      - ivy-cache:/root/.ivy2             # cachea los jars del conector de Snowflake
+
+  dbt:
+    image: ghcr.io/dbt-labs/dbt-snowflake:1.9.latest
+    profiles: ["jobs"]                    # se ejecuta con: docker compose run --rm dbt build
+    working_dir: /usr/app/dbt
+    entrypoint: ["dbt"]
+    env_file:
+      - .env
+    environment:
+      DBT_PROFILES_DIR: /usr/app/dbt
+    volumes:
+      - ./dbt:/usr/app/dbt
+
+volumes:
+  postgres-data:
+  kestra-data:
+  ivy-cache:

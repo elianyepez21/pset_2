@@ -1,0 +1,63 @@
+version: 2
+
+models:
+  - name: slv_reservas
+    description: >
+      Capa Silver. Una fila por reserva única: sin duplicados exactos, sin reservas sin huéspedes, con
+      tarifas imposibles anuladas y marcadas. Reglas y evidencia en docs/calidad_datos.md.
+    tests:
+      # Regla de negocio: una reserva siempre tiene al menos un huésped
+      - dbt_utils.expression_is_true:
+          expression: "adults + children + babies > 0"
+      # Regla de negocio: no se puede dormir un número negativo de noches
+      - dbt_utils.expression_is_true:
+          expression: "noches_total >= 0"
+    columns:
+      - name: booking_key
+        description: Llave de la reserva única.
+        tests:
+          - unique
+          - not_null
+      - name: hotel
+        tests:
+          - accepted_values:
+              values: ["City Hotel", "Resort Hotel"]
+      - name: is_canceled
+        description: Variable objetivo (1 = se canceló).
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+      - name: lead_time
+        description: Días entre la reserva y la llegada.
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: arrival_date
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: "'2015-07-01'"
+              max_value: "'2017-08-31'"
+      - name: adr
+        description: Tarifa diaria. Null si era imposible (negativa o mayor a adr_max).
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1000
+      - name: meal
+        tests:
+          - accepted_values:
+              values: ["BB", "HB", "FB", "SC"]
+      - name: deposit_type
+        tests:
+          - accepted_values:
+              values: ["No Deposit", "Non Refund", "Refundable"]
+      - name: country
+        tests:
+          - not_null
+      - name: n_filas_identicas
+        description: Cuántas filas idénticas de Bronze se colapsaron en esta reserva (1 = no había duplicados).
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 1

@@ -1,0 +1,82 @@
+{
+  "filas_raw": 119390,
+  "completitud_nulos": {
+    "children": {
+      "n": 4,
+      "pct": 0.0
+    },
+    "country": {
+      "n": 488,
+      "pct": 0.41
+    },
+    "agent": {
+      "n": 16340,
+      "pct": 13.69
+    },
+    "company": {
+      "n": 112593,
+      "pct": 94.31
+    }
+  },
+  "duplicados_exactos": {
+    "filas_extra": 31994,
+    "pct": 26.8,
+    "filas_unicas": 87396,
+    "tasa_cancelacion_antes": 0.3704,
+    "tasa_cancelacion_despues": 0.2749
+  },
+  "non_refund": {
+    "filas_raw": 14587,
+    "tasa_cancelacion_raw": 0.9936,
+    "filas_unicas": 1038,
+    "tasa_cancelacion_unicas": 0.947
+  },
+  "sin_huespedes": {
+    "raw": 180,
+    "tras_dedup": 166
+  },
+  "silver_esperado": 87230,
+  "meal_undefined": 1169,
+  "sin_noches": 715,
+  "cliente_repetido_sin_historial": 590,
+  "reservation_status_vs_target": {
+    "Canceled": {
+      "0": 0,
+      "1": 43017
+    },
+    "Check-Out": {
+      "0": 75166,
+      "1": 0
+    },
+    "No-Show": {
+      "0": 0,
+      "1": 1207
+    }
+  },
+  "adr": {
+    "negativo": 1,
+    "cero": 1959,
+    "mayor_1000": 1,
+    "max": 5400.0,
+    "cero_y_complementary": 680
+  },
+  "adultos_mayor_10": 12,
+  "fechas_llegada_invalidas": 0,
+  "rango_llegadas": [
+    "2015-07-01",
+    "2017-08-31"
+  ],
+  "is_canceled_valores": [
+    0,
+    1
+  ],
+  "categorias_undefined": {
+    "market_segment": 2,
+    "distribution_channel": 5
+  },
+  "checkout_no_coincide": {
+    "n": 27,
+    "de": 75166
+  },
+  "batches_mensuales": 26
+}

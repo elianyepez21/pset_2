@@ -1,0 +1,14 @@
+# Las credenciales se leen de variables de entorno (archivo .env). No hay secretos en este archivo.
+hotel_pset2:
+  target: prod
+  outputs:
+    prod:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'PSET2_ROLE') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'WH_PSET2') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE', 'HOTELS_DB') }}"
+      schema: PUBLIC
+      threads: 4

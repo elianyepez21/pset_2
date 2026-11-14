@@ -1,0 +1,74 @@
+id: hotel_00_setup_raw
+namespace: pset2.hotels
+description: |
+  Crea (si no existen) el file format, el stage interno y la tabla RAW.HOTEL_BOOKINGS_RAW.
+  Es idempotente: se puede ejecutar varias veces sin efectos secundarios. Ejecutar una vez antes de la ingesta.
+labels:
+  capa: raw
+
+pluginDefaults:
+  - type: io.kestra.plugin.jdbc.snowflake.Query
+    values:
+      url: "jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com"
+      username: "{{ secret('SNOWFLAKE_USER') }}"
+      password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+      role: "{{ secret('SNOWFLAKE_ROLE') }}"
+      warehouse: "{{ secret('SNOWFLAKE_WAREHOUSE') }}"
+      database: "{{ secret('SNOWFLAKE_DATABASE') }}"
+
+tasks:
+  - id: file_format
+    type: io.kestra.plugin.jdbc.snowflake.Query
+    url: "jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com"
+    sql: |
+      CREATE FILE FORMAT IF NOT EXISTS RAW.FF_HOTEL_CSV
+        TYPE = CSV SKIP_HEADER = 1 FIELD_OPTIONALLY_ENCLOSED_BY = '"'
+        NULL_IF = ('NULL', 'NA') ENCODING = 'UTF8'
+
+  - id: stage
+    type: io.kestra.plugin.jdbc.snowflake.Query
+    url: "jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com"
+    sql: |
+      CREATE STAGE IF NOT EXISTS RAW.STG_HOTEL_FILES FILE_FORMAT = RAW.FF_HOTEL_CSV
+
+  - id: raw_table
+    type: io.kestra.plugin.jdbc.snowflake.Query
+    url: "jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com"
+    sql: |
+      CREATE TABLE IF NOT EXISTS RAW.HOTEL_BOOKINGS_RAW (
+        HOTEL VARCHAR,
+        IS_CANCELED VARCHAR,
+        LEAD_TIME VARCHAR,
+        ARRIVAL_DATE_YEAR VARCHAR,
+        ARRIVAL_DATE_MONTH VARCHAR,
+        ARRIVAL_DATE_WEEK_NUMBER VARCHAR,
+        ARRIVAL_DATE_DAY_OF_MONTH VARCHAR,
+        STAYS_IN_WEEKEND_NIGHTS VARCHAR,
+        STAYS_IN_WEEK_NIGHTS VARCHAR,
+        ADULTS VARCHAR,
+        CHILDREN VARCHAR,
+        BABIES VARCHAR,
+        MEAL VARCHAR,
+        COUNTRY VARCHAR,
+        MARKET_SEGMENT VARCHAR,
+        DISTRIBUTION_CHANNEL VARCHAR,
+        IS_REPEATED_GUEST VARCHAR,
+        PREVIOUS_CANCELLATIONS VARCHAR,
+        PREVIOUS_BOOKINGS_NOT_CANCELED VARCHAR,
+        RESERVED_ROOM_TYPE VARCHAR,
+        ASSIGNED_ROOM_TYPE VARCHAR,
+        BOOKING_CHANGES VARCHAR,
+        DEPOSIT_TYPE VARCHAR,
+        AGENT VARCHAR,
+        COMPANY VARCHAR,
+        DAYS_IN_WAITING_LIST VARCHAR,
+        CUSTOMER_TYPE VARCHAR,
+        ADR VARCHAR,
+        REQUIRED_CAR_PARKING_SPACES VARCHAR,
+        TOTAL_OF_SPECIAL_REQUESTS VARCHAR,
+        RESERVATION_STATUS VARCHAR,
+        RESERVATION_STATUS_DATE VARCHAR,
+        _BATCH_ID VARCHAR,
+        _SOURCE_FILE VARCHAR,
+        _LOADED_AT TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+      )

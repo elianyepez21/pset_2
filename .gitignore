@@ -1,0 +1,10 @@
+.env
+.env_encoded
+*.pem
+*.p8
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+__pycache__/
+*.pyc
+.ivy2/

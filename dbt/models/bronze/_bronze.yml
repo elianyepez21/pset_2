@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: brz_hotel_reservas
+    description: >
+      Capa Bronze (staging). Una fila por fila de RAW (119.390), tipada y con llave técnica booking_key.
+      Conserva duplicados e inconsistencias a propósito: sirve de auditoría de lo que llegó.
+    columns:
+      - name: booking_key
+        description: Hash de las 32 columnas de negocio. NO es único aquí (filas idénticas comparten llave).
+        tests:
+          - not_null
+      - name: is_canceled
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+      - name: arrival_date
+        description: Fecha de llegada reconstruida desde año, mes y día.
+        tests:
+          - not_null
+      - name: lead_time
+        tests:
+          - not_null

@@ -1,0 +1,23 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Datos originales cargados por Kestra, sin ninguna transformación (todo VARCHAR). Incluye duplicados.
+    database: "{{ target.database }}"
+    schema: RAW
+    tables:
+      - name: hotel_bookings_raw
+        description: Una fila por registro de la fuente Hotel Booking Demand, más metadatos de carga (_batch_id, _loaded_at).
+        columns:
+          - name: hotel
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ["City Hotel", "Resort Hotel"]
+          - name: _batch_id
+            description: Mes de llegada del lote (yyyy-MM) con el que Kestra cargó la fila.
+            tests:
+              - not_null
+          - name: _loaded_at
+            tests:
+              - not_null

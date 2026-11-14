@@ -1,0 +1,17 @@
+RAW=119390  tras quitar duplicados=87396  SILVER=87230
+OK    llave única en dim_hotel | esperado: 2 | obtenido: 2
+OK    llave única en dim_fecha | esperado: 793 | obtenido: 793
+OK    llave única en dim_canal | esperado: 26 | obtenido: 26
+OK    llave única en dim_pais | esperado: 178 | obtenido: 178
+OK    llave única en dim_tipo_cliente | esperado: 4 | obtenido: 4
+OK    llave única en dim_deposito | esperado: 3 | obtenido: 3
+OK    llave única en dim_habitacion | esperado: 9 | obtenido: 9
+OK    llave única en dim_plan_comida | esperado: 4 | obtenido: 4
+OK    filas OBT = filas FCT_RESERVAS | esperado: 87230 | obtenido: 87230
+OK    BOOKING_KEY distintas = filas FCT | esperado: 87230 | obtenido: 87230
+OK    filas sin match en alguna dimensión | esperado: 0 | obtenido: 0
+OK    suma de IS_CANCELED conservada | esperado: 24009 | obtenido: 24009
+OK    suma de INGRESO_ESTIMADO conservada | esperado: 34446254.93 | obtenido: 34446254.93
+OK    columnas posteriores a la reserva excluidas | esperado: 0 | obtenido: 0
+OK    train + test = total | esperado: 87230 | obtenido: 87230
+Prueba negativa (llave duplicada en dim_hotel) -> chequeos que fallan: ['llave única en dim_hotel', 'filas OBT = filas FCT_RESERVAS', 'suma de IS_CANCELED conservada', 'suma de INGRESO_ESTIMADO conservada', 'train + test = total']

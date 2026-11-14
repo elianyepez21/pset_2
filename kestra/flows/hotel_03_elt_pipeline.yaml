@@ -1,0 +1,78 @@
+id: hotel_03_elt_pipeline
+namespace: pset2.hotels
+description: |
+  Orquesta lo que ocurre después de RAW: dbt (Bronze > Silver > Gold + tests) y Spark (OBT).
+  Si un test de dbt falla, el flujo se detiene y Spark NO se ejecuta (no se construye una OBT con datos malos).
+  Requisitos: imagen pset2-spark construida (docker compose build spark) y la variable repo_url apuntando a tu repositorio.
+labels:
+  capa: transformacion
+
+variables:
+  repo_url: "https://github.com/elianyepez21/pset_2.git"
+  branch: main
+
+tasks:
+  - id: espacio_de_trabajo
+    type: io.kestra.plugin.core.flow.WorkingDirectory
+    tasks:
+      - id: clonar_repo
+        type: io.kestra.plugin.git.Clone
+        url: "{{ vars.repo_url }}"
+        branch: "{{ vars.branch }}"
+
+      - id: dbt_build
+        type: io.kestra.plugin.dbt.cli.DbtCLI
+        containerImage: ghcr.io/kestra-io/dbt-snowflake:latest
+        taskRunner:
+          type: io.kestra.plugin.scripts.runner.docker.Docker
+        retry:
+          type: exponential
+          interval: PT30S
+          maxInterval: PT5M
+          maxAttempt: 3
+        commands:
+          - dbt deps --project-dir dbt
+          - dbt build --project-dir dbt --target prod
+        profiles: |
+          hotel_pset2:
+            target: prod
+            outputs:
+              prod:
+                type: snowflake
+                account: "{{ secret('SNOWFLAKE_ACCOUNT') }}"
+                user: "{{ secret('SNOWFLAKE_USER') }}"
+                password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+                role: "{{ secret('SNOWFLAKE_ROLE') }}"
+                warehouse: "{{ secret('SNOWFLAKE_WAREHOUSE') }}"
+                database: "{{ secret('SNOWFLAKE_DATABASE') }}"
+                schema: PUBLIC
+                threads: 4
+
+  - id: spark_obt
+    type: io.kestra.plugin.scripts.shell.Commands
+    taskRunner:
+      type: io.kestra.plugin.scripts.runner.docker.Docker
+    containerImage: pset2-spark:latest
+    env:
+      SNOWFLAKE_ACCOUNT: "{{ secret('SNOWFLAKE_ACCOUNT') }}"
+      SNOWFLAKE_USER: "{{ secret('SNOWFLAKE_USER') }}"
+      SNOWFLAKE_PASSWORD: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+      SNOWFLAKE_ROLE: "{{ secret('SNOWFLAKE_ROLE') }}"
+      SNOWFLAKE_WAREHOUSE: "{{ secret('SNOWFLAKE_WAREHOUSE') }}"
+      SNOWFLAKE_DATABASE: "{{ secret('SNOWFLAKE_DATABASE') }}"
+      SPARK_MASTER: "local[*]"
+    commands:
+      - python /opt/app/build_obt.py
+
+errors:
+  - id: aviso_error
+    type: io.kestra.plugin.core.log.Log
+    level: ERROR
+    message: "El pipeline ELT falló en la ejecución {{ execution.id }}. Revisa qué test de dbt o validación de Spark falló."
+
+triggers:
+  - id: mensual_despues_de_ingesta
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 4 1 * *"
+    timezone: America/Guayaquil
+  

@@ -1,0 +1,157 @@
+version: 2
+
+models:
+  - name: dim_hotel
+    description: "Hotel (City / Resort)."
+    columns:
+      - name: hotel_key
+        tests:
+          - unique
+          - not_null
+      - name: hotel_nombre
+        tests:
+          - not_null
+  - name: dim_canal
+    description: "Segmento de mercado y canal de distribución."
+    columns:
+      - name: canal_key
+        tests:
+          - unique
+          - not_null
+      - name: segmento_mercado
+        tests:
+          - not_null
+  - name: dim_pais
+    description: "País de origen del huésped (código ISO-3; UNK si se desconoce)."
+    columns:
+      - name: pais_key
+        tests:
+          - unique
+          - not_null
+      - name: pais_codigo
+        tests:
+          - not_null
+  - name: dim_tipo_cliente
+    description: "Tipo de cliente (Transient, Contract, Group...)."
+    columns:
+      - name: tipo_cliente_key
+        tests:
+          - unique
+          - not_null
+      - name: tipo_cliente
+        tests:
+          - not_null
+  - name: dim_deposito
+    description: "Política de depósito de la reserva."
+    columns:
+      - name: deposito_key
+        tests:
+          - unique
+          - not_null
+      - name: tipo_deposito
+        tests:
+          - not_null
+  - name: dim_habitacion
+    description: "Tipo de habitación reservada."
+    columns:
+      - name: habitacion_key
+        tests:
+          - unique
+          - not_null
+      - name: tipo_habitacion_reservada
+        tests:
+          - not_null
+  - name: dim_plan_comida
+    description: "Plan de comida (BB, HB, FB, SC)."
+    columns:
+      - name: plan_comida_key
+        tests:
+          - unique
+          - not_null
+      - name: plan_comida
+        tests:
+          - not_null
+  - name: dim_fecha
+    description: Calendario diario del 2015-07-01 al 2017-08-31 (rango de llegadas de la fuente).
+    columns:
+      - name: fecha_key
+        tests:
+          - unique
+          - not_null
+      - name: fecha
+        tests:
+          - unique
+          - not_null
+      - name: es_fin_de_semana
+        tests:
+          - not_null
+  - name: fct_reservas
+    description: >
+      Tabla de hechos. GRANO: una fila por reserva única (booking_key). Una reserva = una combinación
+      distinta de los atributos de la fuente (la fuente no trae ID). Excluye las columnas que filtran el resultado.
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "ingreso_estimado >= 0"
+          config:
+            where: "ingreso_estimado is not null"
+      - dbt_utils.expression_is_true:
+          expression: "huespedes_total >= 1"
+    columns:
+      - name: booking_key
+        tests:
+          - unique
+          - not_null
+      - name: is_canceled
+        description: Variable objetivo.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+      - name: hotel_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_hotel')
+              field: hotel_key
+      - name: fecha_llegada_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_fecha')
+              field: fecha_key
+      - name: canal_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_canal')
+              field: canal_key
+      - name: pais_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_pais')
+              field: pais_key
+      - name: tipo_cliente_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_tipo_cliente')
+              field: tipo_cliente_key
+      - name: deposito_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_deposito')
+              field: deposito_key
+      - name: habitacion_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_habitacion')
+              field: habitacion_key
+      - name: plan_comida_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_plan_comida')
+              field: plan_comida_key

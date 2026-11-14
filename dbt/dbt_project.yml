@@ -1,0 +1,29 @@
+name: hotel_pset2
+version: "1.0.0"
+config-version: 2
+profile: hotel_pset2
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  fecha_min: "2015-07-01"        # primera llegada esperada en la fuente
+  fecha_max: "2017-08-31"        # última llegada esperada en la fuente
+  adr_max: 1000                  # tarifa diaria máxima plausible (el dataset trae un valor de 5400)
+  tasa_cancelacion_min: 0.20     # regla de negocio: tasa de cancelación global esperada en Silver
+  tasa_cancelacion_max: 0.45
+  fecha_corte_prueba: "2017-01-01"  # llegadas desde esta fecha = conjunto de prueba (división temporal)
+
+models:
+  hotel_pset2:
+    bronze:
+      +schema: bronze
+      +materialized: table
+    silver:
+      +schema: silver
+      +materialized: table
+    gold:
+      +schema: gold
+      +materialized: table

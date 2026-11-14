@@ -1,0 +1,56 @@
+id: hotel_02_backfill_raw
+namespace: pset2.hotels
+description: |
+  Backfill histórico: carga los 26 meses (2015-07 a 2017-08) en RAW, un lote por mes, de forma secuencial.
+  Es seguro repetirlo porque cada lote borra e inserta (idempotente). Al final lanza el pipeline ELT completo.
+labels:
+  capa: raw
+
+tasks:
+  - id: por_mes
+    type: io.kestra.plugin.core.flow.ForEach
+    concurrencyLimit: 1
+    values: [
+      "2015-07",
+      "2015-08",
+      "2015-09",
+      "2015-10",
+      "2015-11",
+      "2015-12",
+      "2016-01",
+      "2016-02",
+      "2016-03",
+      "2016-04",
+      "2016-05",
+      "2016-06",
+      "2016-07",
+      "2016-08",
+      "2016-09",
+      "2016-10",
+      "2016-11",
+      "2016-12",
+      "2017-01",
+      "2017-02",
+      "2017-03",
+      "2017-04",
+      "2017-05",
+      "2017-06",
+      "2017-07",
+      "2017-08"
+    ]
+    tasks:
+      - id: ingesta_mes
+        type: io.kestra.plugin.core.flow.Subflow
+        namespace: pset2.hotels
+        flowId: hotel_01_ingest_raw
+        wait: true
+        transmitFailed: true
+        inputs:
+          batch_month: "{{ taskrun.value }}"
+
+  - id: transformar_y_construir_obt
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: pset2.hotels
+    flowId: hotel_03_elt_pipeline
+    wait: true
+    transmitFailed: true
