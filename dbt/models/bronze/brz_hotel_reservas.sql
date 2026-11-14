@@ -82,6 +82,7 @@ tipado as (
     try_to_number(required_car_parking_spaces) as required_car_parking_spaces,
     try_to_number(total_of_special_requests) as total_of_special_requests,
     trim(reservation_status) as reservation_status,
+        try_to_date(trim(reservation_status_date)) as reservation_status_date,
         _batch_id,
         _source_file,
         _loaded_at
