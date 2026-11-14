@@ -12,46 +12,50 @@ variables:
   branch: main
 
 tasks:
-  - id: espacio_de_trabajo
-    type: io.kestra.plugin.core.flow.WorkingDirectory
-    tasks:
-      - id: clonar_repo
-        type: io.kestra.plugin.git.Clone
-        url: "{{ vars.repo_url }}"
-        branch: "{{ vars.branch }}"
-
-      - id: dbt_build
-        type: io.kestra.plugin.dbt.cli.DbtCLI
-        containerImage: ghcr.io/kestra-io/dbt-snowflake:latest
-        taskRunner:
-          type: io.kestra.plugin.scripts.runner.docker.Docker
-        retry:
-          type: exponential
-          interval: PT30S
-          maxInterval: PT5M
-          maxAttempt: 3
-        commands:
-          - dbt deps --project-dir dbt
-          - dbt build --project-dir dbt --target prod
-        profiles: |
-          hotel_pset2:
-            target: prod
-            outputs:
-              prod:
-                type: snowflake
-                account: "{{ secret('SNOWFLAKE_ACCOUNT') }}"
-                user: "{{ secret('SNOWFLAKE_USER') }}"
-                password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
-                role: "{{ secret('SNOWFLAKE_ROLE') }}"
-                warehouse: "{{ secret('SNOWFLAKE_WAREHOUSE') }}"
-                database: "{{ secret('SNOWFLAKE_DATABASE') }}"
-                schema: PUBLIC
-                threads: 4
+  - id: dbt_build
+    type: io.kestra.plugin.dbt.cli.DbtCLI
+    containerImage: ghcr.io/kestra-io/dbt-snowflake:latest
+    taskRunner:
+      type: io.kestra.plugin.scripts.runner.docker.Docker
+    env:
+      SNOWFLAKE_ACCOUNT: "{{ secret('SNOWFLAKE_ACCOUNT') }}"
+      SNOWFLAKE_USER: "{{ secret('SNOWFLAKE_USER') }}"
+      SNOWFLAKE_PASSWORD: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+      SNOWFLAKE_ROLE: "{{ secret('SNOWFLAKE_ROLE') }}"
+      SNOWFLAKE_WAREHOUSE: "{{ secret('SNOWFLAKE_WAREHOUSE') }}"
+      SNOWFLAKE_DATABASE: "{{ secret('SNOWFLAKE_DATABASE') }}"
+    beforeCommands:
+      - git clone --depth 1 --branch {{ vars.branch }} {{ vars.repo_url }} repo_temp
+      - cp -r repo_temp/dbt/* .
+      - rm -rf repo_temp
+    retry:
+      type: exponential
+      interval: PT30S
+      maxInterval: PT5M
+      maxAttempt: 3
+    commands:
+      - dbt deps
+      - dbt build --target prod
+    profiles: |
+      hotel_pset2:
+        target: prod
+        outputs:
+          prod:
+            type: snowflake
+            account: "{{ secret('SNOWFLAKE_ACCOUNT') }}"
+            user: "{{ secret('SNOWFLAKE_USER') }}"
+            password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+            role: "{{ secret('SNOWFLAKE_ROLE') }}"
+            warehouse: "{{ secret('SNOWFLAKE_WAREHOUSE') }}"
+            database: "{{ secret('SNOWFLAKE_DATABASE') }}"
+            schema: PUBLIC
+            threads: 4
 
   - id: spark_obt
     type: io.kestra.plugin.scripts.shell.Commands
     taskRunner:
       type: io.kestra.plugin.scripts.runner.docker.Docker
+      pullPolicy: NEVER
     containerImage: pset2-spark:latest
     env:
       SNOWFLAKE_ACCOUNT: "{{ secret('SNOWFLAKE_ACCOUNT') }}"
